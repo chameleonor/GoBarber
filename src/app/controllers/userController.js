@@ -91,9 +91,11 @@ class UserController {
         return res.status(401).json({ error: 'Password does not match.' }); // se diferente, retorna
       }
 
-      const { id, name, provider } = await user.update(req.body);
+      const { id, name, email: newEmail, avatar_id } = await user.update(
+        req.body
+      );
 
-      return res.json({ id, name, email, provider });
+      return res.json({ id, name, email: newEmail, avatar_id });
     } catch (error) {
       console.log('error: ', error);
       return res.status(500).json({ error: 'Internal server error.' });

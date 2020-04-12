@@ -1,4 +1,4 @@
-import { Sequelize, Model } from 'sequelize';
+import Sequelize, { Model } from 'sequelize';
 
 import bcrypt from 'bcryptjs';
 
@@ -30,6 +30,13 @@ class User extends Model {
 
   checkPassword(password) {
     return bcrypt.compare(password, this.password_hash);
+  }
+
+  // esse campo e gerado automaticamente quando fazemos o relacionamento entre
+  // as tabelas, sem a necessidade de criar um campo no schema
+  // e como as tabelas fazem joins
+  static associate(models) {
+    this.belongsTo(models.File, { foreignKey: 'avatar_id', as: 'avatar' });
   }
 }
 
