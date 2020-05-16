@@ -17,9 +17,10 @@ class Appointment extends Model {
   // esse campo e gerado automaticamente quando fazemos o relacionamento entre
   // as tabelas, sem a necessidade de criar um campo no schema
   // e como as tabelas fazem joins
+  // obs: quando temos dois relacionamentos com uma tabela, e obrigatorio ter dois apelidos
   static associate(models) {
-    this.belongsTo(models.File, { foreignKey: 'user_id', as: 'user' });
-    this.belongsTo(models.File, { foreignKey: 'provider_id', as: 'provider' });
+    this.belongsTo(models.User, { foreignKey: 'user_id', as: 'user' });
+    this.belongsTo(models.User, { foreignKey: 'provider_id', as: 'provider' });
   }
 }
 
