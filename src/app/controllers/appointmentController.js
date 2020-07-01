@@ -1,11 +1,14 @@
 import * as Yup from 'yup';
-import { startOfHour, parseISO, isBefore, format } from 'date-fns';
+import { startOfHour, parseISO, isBefore, format, subHours } from 'date-fns';
 import enUS from 'date-fns/locale/en-US';
 import Appointment from '../models/appointment';
 import User from '../models/user';
 import File from '../models/file';
 
 import Notification from '../schemas/notification';
+
+import CancellationMail from '../../jobs/CancellationMail';
+import Queue from '../../lib/Queue';
 
 class AppointmentController {
   async index(req, res) {
@@ -14,7 +17,7 @@ class AppointmentController {
     const appointments = await Appointment.findAll({
       where: { user_id: req.userId, canceled_at: null },
       order: ['date'],
-      attributes: ['id', 'date'],
+      attributes: ['id', 'date', 'past', 'cancelable'],
       limit: 20,
       offset: (page - 1) * 20,
       include: [
@@ -97,6 +100,38 @@ class AppointmentController {
     });
 
     return res.json(appointment);
+  }
+
+  async delete(req, res) {
+    const appointment = await Appointment.findByPk(req.params.id, {
+      include: [
+        {
+          model: User,
+          as: 'provider',
+          attributes: ['name', 'email']
+        }
+      ]
+    });
+
+    if (appointment.user_id !== req.userId)
+      return res.status(401).json({ error: "You don't have permission." });
+
+    const dateWithSub = subHours(appointment.date, 2);
+
+    if (isBefore(dateWithSub, new Date()))
+      return res.status(401).json({
+        error: 'You can only cancel appointments with 2 hours in advance.'
+      });
+
+    appointment.canceled_at = new Date();
+
+    await appointment.save();
+
+    await Queue.add(CancellationMail.key, {
+      appointment
+    });
+
+    return res.status(200).json(appointment);
   }
 }
 
